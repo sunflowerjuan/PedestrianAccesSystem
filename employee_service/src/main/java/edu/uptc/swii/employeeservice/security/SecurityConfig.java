@@ -15,14 +15,13 @@ public class SecurityConfig {
         PasetoAuthenticationFilter pasetoFilter = new PasetoAuthenticationFilter(pasetoService);
 
         http.csrf(csrf -> csrf.disable())
-            .addFilterBefore(pasetoFilter, UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                // Permite acceso libre al endpoint de búsqueda por documento
-                .requestMatchers("/employee/findbydocument/**").permitAll()
-                // Protege el resto para ADMIN
-                .requestMatchers("/employee/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            );
+                .addFilterBefore(pasetoFilter, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                        // Permite acceso libre al endpoint de búsqueda por documento
+                        .requestMatchers("/employee/findbydocument/**").permitAll()
+                        // Protege el resto para ADMIN
+                        .requestMatchers("/employee/**").hasRole("ADMIN")
+                        .anyRequest().authenticated());
         return http.build();
     }
 }
