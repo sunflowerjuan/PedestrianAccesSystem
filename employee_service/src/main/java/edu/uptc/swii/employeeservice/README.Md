@@ -90,5 +90,5 @@ curl -X GET http://localhost/employee/findallemployees \
 5. Find Employee by Document
 
 ```bash
-curl -X GET http://localhost/employee/findbydocument/123456789
+a
 ```
