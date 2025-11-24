@@ -1,4 +1,5 @@
 services:
+  # API GATEWAY
   traefik:
     image: traefik:v3.5
     container_name: traefik-pedestrian
@@ -15,7 +16,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - pedestrian-net
-
+  # LOGIN SERVICE
   login-service:
     build: ./login_service
     container_name: login-service
@@ -34,7 +35,7 @@ services:
       - "traefik.http.middlewares.login-strip.stripprefix.prefixes=/login"
       - "traefik.http.routers.login.middlewares=login-strip"
       - "traefik.http.services.login.loadbalancer.server.port=8080"
-
+  # MONGO (lOGIN SERVICE)
   mongo:
     image: mongo:6.0
     container_name: mongo
@@ -44,6 +45,24 @@ services:
       - "27017:27017"
     networks:
       - pedestrian-net
+
+  # EMPLOYEE SERVICE
+  employee-service:
+    build: ./employee_service
+    container_name: employee-service
+    depends_on:
+      - login-service
+    networks:
+      - pedestrian-net
+    labels:
+      - "traefik.enable=true"
+
+      # /employee
+      - "traefik.http.routers.employee.rule=PathPrefix(`/employee`)"
+      - "traefik.http.routers.employee.entrypoints=web"
+
+      # Backend corre en 8080
+      - "traefik.http.services.employee.loadbalancer.server.port=8080"
 
 networks:
   pedestrian-net:
