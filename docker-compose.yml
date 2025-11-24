@@ -63,6 +63,18 @@ services:
 
       # Backend corre en 8080
       - "traefik.http.services.employee.loadbalancer.server.port=8080"
-
+  # ACCES SERVICE
+  access-service:
+    build: ./access_service
+    container_name: access-service
+    depends_on:
+      - employee-service
+    networks:
+      - pedestrian-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.access.rule=PathPrefix(`/access`)"
+      - "traefik.http.routers.access.entrypoints=web"
+      - "traefik.http.services.access.loadbalancer.server.port=8080"
 networks:
   pedestrian-net:
