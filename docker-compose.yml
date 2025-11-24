@@ -1,0 +1,49 @@
+services:
+  traefik:
+    image: traefik:v3.5
+    container_name: traefik-pedestrian
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - pedestrian-net
+
+  login-service:
+    build: ./login_service
+    container_name: login-service
+    depends_on:
+      - mongo
+    networks:
+      - pedestrian-net
+    labels:
+      - "traefik.enable=true"
+
+      # expone el microservicio bajo /login
+      - "traefik.http.routers.login.rule=PathPrefix(`/login`)"
+      - "traefik.http.routers.login.entrypoints=web"
+
+      # StripPrefix elimina /login antes de enviar al backend
+      - "traefik.http.middlewares.login-strip.stripprefix.prefixes=/login"
+      - "traefik.http.routers.login.middlewares=login-strip"
+      - "traefik.http.services.login.loadbalancer.server.port=8080"
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    environment:
+      MONGO_INITDB_DATABASE: logindb
+    ports:
+      - "27017:27017"
+    networks:
+      - pedestrian-net
+
+networks:
+  pedestrian-net:
