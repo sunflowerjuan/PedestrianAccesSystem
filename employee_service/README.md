@@ -14,22 +14,6 @@ Este microservicio hace parte del sistema distribuido Pedestrian Access System, 
 
 Todo está protegido mediante PASETO, y se expone al público a través del API Gateway Traefik.
 
-El Employee Service está construido sobre:
-
-Spring Boot 4
-
-Spring Web MVC
-
-Spring Security
-
-JPA + H2 en modo file (persistente en contenedor)
-
-PASETO V2.local para autenticación segura
-
-Traefik v3.5 como enrutador/API Gateway
-
-Docker + Docker Compose
-
 El microservicio se expone bajo la ruta: `http://localhost/employee`
 
 ## Endpoints del Employee Service
@@ -90,5 +74,5 @@ curl -X GET http://localhost/employee/findallemployees \
 5. Find Employee by Document
 
 ```bash
-a
+curl -X GET http://localhost/employee/findbydocument/123456789
 ```
