@@ -10,8 +10,8 @@ services:
       - "--api.dashboard=true"
       - "--api.insecure=true"
     ports:
-      - "80:80"
-      - "8080:8080"
+      - "8081:80"
+      - "8082:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
@@ -76,5 +76,34 @@ services:
       - "traefik.http.routers.access.rule=PathPrefix(`/access`)"
       - "traefik.http.routers.access.entrypoints=web"
       - "traefik.http.services.access.loadbalancer.server.port=8080"
+  # FRONTEND (static)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    networks:
+      - pedestrian-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.front.rule=PathPrefix(`/frontend`)"
+      - "traefik.http.routers.front.entrypoints=web"
+      - "traefik.http.middlewares.front-strip.stripprefix.prefixes=/frontend"
+      - "traefik.http.routers.front.middlewares=front-strip"
+      - "traefik.http.services.front.loadbalancer.server.port=80"
+  # ALERT SERVICE
+  alert-service:
+    build: ./alert_service
+    container_name: alert-service
+    networks:
+      - pedestrian-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alert.rule=PathPrefix(`/alert`)"
+      - "traefik.http.routers.alert.entrypoints=web"
+      - "traefik.http.middlewares.alert-strip.stripprefix.prefixes=/alert"
+      - "traefik.http.routers.alert.middlewares=alert-strip"
+      - "traefik.http.services.alert.loadbalancer.server.port=8080"
+
 networks:
   pedestrian-net:
