@@ -27,7 +27,7 @@ Crea un empleado nuevo.
 ```bash
 curl -X POST http://localhost/employee/createemployee \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer v2.local.dru9fe84_MZXRQRwqgnkYJDoe8hhrvVZ7I4Oqo44Fa9oOW8R2NAHsrwXiPnc2H8pSbllAsjQ_cVst_04ZZNsMeBFXv2cvhai1rVIVYKIRvVu4rQ2-nkzO-6aIvlUm3Bh25sgvrpj" \
+  -H "Authorization: Bearer v2.local.JP0i6BECid8DH8zTAvMyzDsGAdzP3DYt4wcCYDg4bEbZzV-2jsu4cLqKNhVToJy_1Ytq2TisLelJhDz61-f4YWKmJ39iE-Z7hY5-q-bj98hXppQ5Sy_GGD5UFWd-CSt-coXogn2T" \
   -d '{
         "document": "123456789",
         "firstname": "María",

@@ -1,5 +1,7 @@
 services:
-  # API GATEWAY
+  # ============================
+  # API GATEWAY - TRAEFIK
+  # ============================
   traefik:
     image: traefik:v3.5
     container_name: traefik-pedestrian
@@ -10,32 +12,37 @@ services:
       - "--api.dashboard=true"
       - "--api.insecure=true"
     ports:
-      - "8081:80"
-      - "8082:8080"
+      - "80:80"
+      - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - pedestrian-net
+
+  # ============================
   # LOGIN SERVICE
+  # ============================
   login-service:
     build: ./login_service
     container_name: login-service
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - pedestrian-net
     labels:
       - "traefik.enable=true"
-
-      # expone el microservicio bajo /login
       - "traefik.http.routers.login.rule=PathPrefix(`/login`)"
       - "traefik.http.routers.login.entrypoints=web"
-
-      # StripPrefix elimina /login antes de enviar al backend
       - "traefik.http.middlewares.login-strip.stripprefix.prefixes=/login"
       - "traefik.http.routers.login.middlewares=login-strip"
       - "traefik.http.services.login.loadbalancer.server.port=8080"
-  # MONGO (lOGIN SERVICE)
+
+  # ============================
+  # MONGO
+  # ============================
   mongo:
     image: mongo:6.0
     container_name: mongo
@@ -46,29 +53,36 @@ services:
     networks:
       - pedestrian-net
 
+  # ============================
   # EMPLOYEE SERVICE
+  # ============================
   employee-service:
     build: ./employee_service
     container_name: employee-service
     depends_on:
-      - login-service
+      login-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - pedestrian-net
     labels:
       - "traefik.enable=true"
-
-      # /employee
       - "traefik.http.routers.employee.rule=PathPrefix(`/employee`)"
       - "traefik.http.routers.employee.entrypoints=web"
-
-      # Backend corre en 8080
       - "traefik.http.services.employee.loadbalancer.server.port=8080"
-  # ACCES SERVICE
+
+  # ============================
+  # ACCESS SERVICE
+  # ============================
   access-service:
     build: ./access_service
     container_name: access-service
     depends_on:
-      - employee-service
+      employee-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - pedestrian-net
     labels:
@@ -77,10 +91,15 @@ services:
       - "traefik.http.routers.access.entrypoints=web"
       - "traefik.http.services.access.loadbalancer.server.port=8080"
 
+  # ============================
   # ALERT SERVICE
+  # ============================
   alert-service:
     build: ./alert_service
     container_name: alert-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     networks:
       - pedestrian-net
     labels:
@@ -90,6 +109,23 @@ services:
       - "traefik.http.middlewares.alert-strip.stripprefix.prefixes=/alert"
       - "traefik.http.routers.alert.middlewares=alert-strip"
       - "traefik.http.services.alert.loadbalancer.server.port=8080"
+
+  # ============================
+  # RABBITMQ
+  # ============================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-saga
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - pedestrian-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 networks:
   pedestrian-net:

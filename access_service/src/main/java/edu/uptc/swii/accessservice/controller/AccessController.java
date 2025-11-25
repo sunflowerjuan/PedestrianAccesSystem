@@ -5,6 +5,7 @@ import edu.uptc.swii.accessservice.dto.AccessDTO;
 import edu.uptc.swii.accessservice.domain.Access;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,34 +13,35 @@ import java.util.List;
 @RestController
 @RequestMapping("/access")
 public class AccessController {
+
     private final AccessService accessService;
 
     public AccessController(AccessService accessService) {
         this.accessService = accessService;
     }
 
-    // Registrar ingreso (check-in)
+    // Registrar ingreso (check-in) usando SAGA
     @PostMapping("/usercheckin")
     public ResponseEntity<?> userCheckin(@RequestBody AccessDTO dto) {
-        try {
-            dto.setAccessType("ENTRADA");
-            dto.setAccessTime(LocalDateTime.now());
-            Access result = accessService.registerAccessCheckin(dto);
-            return ResponseEntity.ok(result);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(502).body(e.getMessage());
-        }
+        dto.setAccessType("ENTRADA");
+        dto.setAccessTime(LocalDateTime.now());
+
+        accessService.registerAccessCheckin(dto);
+
+        return ResponseEntity.ok(
+                "Validación iniciada: esperando confirmación del empleado para registrar ENTRADA.");
     }
 
-    // Registrar salida (check-out)
+    // Registrar salida (check-out) usando SAGA
     @PostMapping("/usercheckout")
     public ResponseEntity<?> userCheckout(@RequestBody AccessDTO dto) {
         dto.setAccessType("SALIDA");
         dto.setAccessTime(LocalDateTime.now());
-        Access result = accessService.registerAccessCheckout(dto);
-        return ResponseEntity.ok(result);
+
+        accessService.registerAccessCheckout(dto);
+
+        return ResponseEntity.ok(
+                "Validación iniciada: esperando confirmación del empleado para registrar SALIDA.");
     }
 
     // Consultar todos los empleados por fecha (YYYY-MM-DD)
@@ -50,13 +52,16 @@ public class AccessController {
         return ResponseEntity.ok(logs);
     }
 
-    // Consultar accesos por empleado y rango de fechas (YYYY-MM-DD)
+    // Consultar accesos por empleado y rangos (YYYY-MM-DD)
     @GetMapping("/employeebydates")
-    public ResponseEntity<List<Access>> getEmployeeByDates(@RequestParam String document,
+    public ResponseEntity<List<Access>> getEmployeeByDates(
+            @RequestParam String document,
             @RequestParam String start,
             @RequestParam String end) {
+
         LocalDate startDate = LocalDate.parse(start);
         LocalDate endDate = LocalDate.parse(end);
+
         List<Access> logs = accessService.findByEmployeeAndDates(document, startDate, endDate);
         return ResponseEntity.ok(logs);
     }
