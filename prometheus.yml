@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'spring-boot-apps'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - 'login-service:8080'
+          - 'employee-service:8080'
+          - 'access-service:8080'
+          - 'alert-service:8080'

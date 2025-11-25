@@ -1,7 +1,7 @@
+version: "3.8"
+
 services:
-  # ============================
   # API GATEWAY - TRAEFIK
-  # ============================
   traefik:
     image: traefik:v3.5
     container_name: traefik-pedestrian
@@ -19,17 +19,13 @@ services:
     networks:
       - pedestrian-net
 
-  # ============================
   # LOGIN SERVICE
-  # ============================
   login-service:
     build: ./login_service
     container_name: login-service
     depends_on:
-      mongo:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - mongo
+      - rabbitmq
     networks:
       - pedestrian-net
     labels:
@@ -39,10 +35,8 @@ services:
       - "traefik.http.middlewares.login-strip.stripprefix.prefixes=/login"
       - "traefik.http.routers.login.middlewares=login-strip"
       - "traefik.http.services.login.loadbalancer.server.port=8080"
-
-  # ============================
-  # MONGO
-  # ============================
+    environment:
+      - SPRING_METRICS_EXPORT_PROMETHEUS_ENABLED=true # Habilitar métricas para Prometheus
   mongo:
     image: mongo:6.0
     container_name: mongo
@@ -52,18 +46,13 @@ services:
       - "27017:27017"
     networks:
       - pedestrian-net
-
-  # ============================
   # EMPLOYEE SERVICE
-  # ============================
   employee-service:
     build: ./employee_service
     container_name: employee-service
     depends_on:
-      login-service:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - login-service
+      - rabbitmq
     networks:
       - pedestrian-net
     labels:
@@ -71,18 +60,16 @@ services:
       - "traefik.http.routers.employee.rule=PathPrefix(`/employee`)"
       - "traefik.http.routers.employee.entrypoints=web"
       - "traefik.http.services.employee.loadbalancer.server.port=8080"
+    environment:
+      - SPRING_METRICS_EXPORT_PROMETHEUS_ENABLED=true # Habilitar métricas para Prometheus
 
-  # ============================
   # ACCESS SERVICE
-  # ============================
   access-service:
     build: ./access_service
     container_name: access-service
     depends_on:
-      employee-service:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      - employee-service
+      - rabbitmq
     networks:
       - pedestrian-net
     labels:
@@ -90,16 +77,15 @@ services:
       - "traefik.http.routers.access.rule=PathPrefix(`/access`)"
       - "traefik.http.routers.access.entrypoints=web"
       - "traefik.http.services.access.loadbalancer.server.port=8080"
+    environment:
+      - SPRING_METRICS_EXPORT_PROMETHEUS_ENABLED=true # Habilitar métricas para Prometheus
 
-  # ============================
   # ALERT SERVICE
-  # ============================
   alert-service:
     build: ./alert_service
     container_name: alert-service
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
     networks:
       - pedestrian-net
     labels:
@@ -107,10 +93,10 @@ services:
       - "traefik.http.routers.alert.rule=PathPrefix(`/alert`)"
       - "traefik.http.routers.alert.entrypoints=web"
       - "traefik.http.services.alert.loadbalancer.server.port=8080"
+    environment:
+      - SPRING_METRICS_EXPORT_PROMETHEUS_ENABLED=true # Habilitar métricas para Prometheus
 
-  # ============================
   # RABBITMQ
-  # ============================
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq-saga
@@ -125,5 +111,30 @@ services:
       timeout: 3s
       retries: 10
 
+  # PROMETHEUS
+  prometheus:
+    image: prom/prometheus:v2.39.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # El archivo de configuración de Prometheus
+    ports:
+      - "9090:9090" # Puerto de Prometheus
+    networks:
+      - pedestrian-net
+
+  # GRAFANA
+  grafana:
+    image: grafana/grafana:8.5.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Contraseña predeterminada para el administrador
+    ports:
+      - "3000:3000" # Puerto de Grafana
+    depends_on:
+      - prometheus
+    networks:
+      - pedestrian-net
+
 networks:
   pedestrian-net:
+    driver: bridge
