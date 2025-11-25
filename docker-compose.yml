@@ -106,8 +106,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.alert.rule=PathPrefix(`/alert`)"
       - "traefik.http.routers.alert.entrypoints=web"
-      - "traefik.http.middlewares.alert-strip.stripprefix.prefixes=/alert"
-      - "traefik.http.routers.alert.middlewares=alert-strip"
       - "traefik.http.services.alert.loadbalancer.server.port=8080"
 
   # ============================

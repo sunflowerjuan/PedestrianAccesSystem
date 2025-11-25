@@ -21,15 +21,42 @@ public class RabbitSagaConfig {
         return new TopicExchange(SAGA_EXCHANGE, true, false);
     }
 
+    /** Cola que recibe la petición del access-service */
     @Bean
     public Queue checkEmployeeQueue() {
         return new Queue(CHECK_EMPLOYEE, true);
     }
 
     @Bean
-    public Binding checkEmployeeBind() {
+    public Binding checkEmployeeBinding() {
         return BindingBuilder.bind(checkEmployeeQueue())
                 .to(sagaExchange())
                 .with(CHECK_EMPLOYEE);
+    }
+
+    /** Cola de respuesta cuando SI existe */
+    @Bean
+    public Queue employeeExistsQueue() {
+        return new Queue(EMPLOYEE_EXISTS, true);
+    }
+
+    @Bean
+    public Binding employeeExistsBinding() {
+        return BindingBuilder.bind(employeeExistsQueue())
+                .to(sagaExchange())
+                .with(EMPLOYEE_EXISTS);
+    }
+
+    /** Cola de respuesta cuando NO existe */
+    @Bean
+    public Queue employeeNotExistsQueue() {
+        return new Queue(EMPLOYEE_NOT_EXISTS, true);
+    }
+
+    @Bean
+    public Binding employeeNotExistsBinding() {
+        return BindingBuilder.bind(employeeNotExistsQueue())
+                .to(sagaExchange())
+                .with(EMPLOYEE_NOT_EXISTS);
     }
 }

@@ -15,12 +15,11 @@ public class SecurityConfig {
         PasetoAuthenticationFilter pasetoFilter = new PasetoAuthenticationFilter(pasetoService);
 
         http.csrf(csrf -> csrf.disable())
-            .addFilterBefore(pasetoFilter, UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/alert/getalertsbydocument", "/alert/getalertsbycode").permitAll()
-                .requestMatchers("/alert/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            );
+                .addFilterBefore(pasetoFilter, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/alert/getalertsbydocument", "/alert/getalertsbycode").permitAll()
+                        .requestMatchers("/alert/**").hasRole("ADMIN")
+                        .anyRequest().authenticated());
         return http.build();
     }
 }
